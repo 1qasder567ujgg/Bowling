@@ -4,9 +4,25 @@ class Player:
         self.points = []
 
 
+def getNumberOfPlayers():
+    while True:
+        try:
+            pl_cnt = int(input("How many players? "))
+            break
+        except:
+            print("\033[1A", end="")
+            print("\033[K", end="")
+    return pl_cnt
+
+
 FRAMES = 3
 players = []
-players_count = int(input("How many players? "))
+
+#Clear screen & move to the top
+print("\033[2J", end="")
+print("\033[H", end="")
+
+players_count = getNumberOfPlayers()
 
 for i in range(players_count):
     players.append(Player(input("Enter name of " + str(i + 1) + " player: ")))
