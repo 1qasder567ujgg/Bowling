@@ -7,29 +7,40 @@ class Player:
 def getNumberOfPlayers():
     while True:
         try:
-            pl_cnt = int(input("How many players? "))
-            break
+            pl_cnt = int(input("How many players? (Up to 5) "))
+            if 0 < pl_cnt < 6:
+                break
         except:
-            print("\033[1A", end="")
-            print("\033[K", end="")
+            pass
+        print("\033[1A", end="")
+        print("\033[K", end="")
     return pl_cnt
 
 
-FRAMES = 3
-players = []
+def getPlayers(pl_cnt):
+    p = []
+    for i in range(pl_cnt):
+        while True:
+            p_name = input("Player #" + str(i + 1) + " name: ").strip()
+            if len(p_name) != 0:
+                break
+            print("\033[1A", end="")
+            print("\033[K", end="")
+        p.append(Player(p_name))
+    return p
+
+
+NUMBER_OF_ROUNDS = 3
 
 #Clear screen & move to the top
 print("\033[2J", end="")
 print("\033[H", end="")
 
 players_count = getNumberOfPlayers()
+players = getPlayers(players_count)
 
-for i in range(players_count):
-    players.append(Player(input("Enter name of " + str(i + 1) + " player: ")))
-
-for i in range(FRAMES):
+for i in range(NUMBER_OF_ROUNDS):
     for player in players:
-    #     print(player.name)
 
         first_trow = int(input(player.name + ", what is your 1st score? "))
         if first_trow == 10:
@@ -40,7 +51,7 @@ for i in range(FRAMES):
                 player.points.append([first_trow, second_throw, "/"])
             else:
                 player.points.append([first_trow, second_throw, first_trow + second_throw])
-        print(player.name, player.points)
+        #print(player.name, player.points)
 
 for player in players:
     print(player.name, player.points)
