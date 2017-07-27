@@ -98,4 +98,4 @@ if players_count != 0:
                     showScore(player, p, i)
             p += 1
 
-print("\033[1B", end="\r")
+print("\033[3B", end="\r")
