@@ -4,12 +4,24 @@ class Player:
         self.points = []
 
 
+def exitBowling(clearScreen=False):
+    if clearScreen:
+        print("\033[2J", end="")
+        print("\033[H", end="")        
+    else:
+        print("\033[1A", end="\r")
+        print("\033[K", end="")
+    exit(0)
+
+
 def getNumberOfPlayers():
     while True:
         try:
-            pl_cnt = int(input("How many players? Up to 5. 0 to exit "))
+            pl_cnt = int(input("How many players? (Up to 5) "))
             if 0 <= pl_cnt <= 5:
                 break
+        except KeyboardInterrupt:
+            exitBowling()
         except:
             pass
         print("\033[1A", end="")
@@ -21,13 +33,19 @@ def getPlayers(pl_cnt):
     p = []
     for i in range(pl_cnt):
         while True:
-            p_name = input("Player #" + str(i + 1) + " name: ").strip()
-            if len(p_name) != 0:
-                break
+            try:
+                p_name = input("Player #" + str(i + 1) + " name: ").strip()
+                if len(p_name) != 0:
+                    break
+            except KeyboardInterrupt:
+                exitBowling(True)
+            except:
+                pass
             print("\033[1A", end="")
             print("\033[K", end="")
         p.append(Player(p_name))
     return p
+
 
 def setScreen(players):
     print("\033[2J", end="")
@@ -38,37 +56,41 @@ def setScreen(players):
     for player in players:
         print("\033[1B", end="")
         print('Player #' + str(i) + ': ' + player.name)
-        #print("\033[1A", end="")
-        #print(' __'*21)
         print('|__' * 21 + '|')
         print('|_____' * 9 + '|________|')
         i += 1
 
-def showScore(player, order, is_last):
-    score_up = ''
-    score_down = ''
-    for p in player.points:
-        score1 = '_' + str(p[0])
-        score2 = '_' + str(p[1])
-        score3 = ''
-        if is_last and len(p) == len(player.points[-1]):
-            score3 = '_' + str(p[2])
-            score3 = '|' + score3[-2:]
-        score_up += '|' + score1[-2:] + '|' + score2[-2:] + score3
-        if is_last and len(p) == len(player.points[-1]):
-            score1 = '__' + str(p[3]) + '__'
-        else:
-            score1 = '__' + str(p[2]) + '__'
-        score_down += '|' + score1[:5] 
 
+def showUpperScore(score, throw, turn, order):
+    score = '__' + str(score)
     print("\033[H", end="")
-    print("\033[" + str(5 + 4*(order-1)) + "B", end="")
-    print(score_up, end='')
+    print("\033[" + str(6    + 4*(order-1)) + ';' + str(2 + 6*turn + 3*(throw - 1)) + "H", end="")
+    print(score[-2:], end='')
+
+
+def showLowerScore(player, order):
+    score_down = ''
+    for i, p in enumerate(player.points):
+        score_down += '|__' 
+        if i == 9:
+            score_down += '_'
+        score_down += str(p[3]) + '_'
+        if len(str(p[3])) == 1:
+            score_down += '_'
+
     print("\033[1B", end="")
     print("\033[" + str(7 + 4*(order-1)) + ";1H", end="")
     print(score_down, end='')
 
-def getThrow(msg):
+
+def showtotalScore(score, throw, turn, order):
+    score = '__' + str(score)
+    print("\033[H", end="")
+    print("\033[" + str(6 + 4*(order-1)) + ';' + str(2 + 6*turn + 3*(throw - 1)) + "H", end="")
+    print(score[-2:], end='')
+
+
+def getThrow(msg, last_throw, is_last):
 
     print("\033[H", end="")
     print("\033[2K", end="")
@@ -76,14 +98,17 @@ def getThrow(msg):
     while True:
         try:
             score = int(input(msg))
-            if 0 <= score <= 10:
+            if ((0 <= score + last_throw <= 10) and not is_last) or ((0 <= score <= 10) and is_last):
                 break
+        except KeyboardInterrupt:
+            exitBowling()
         except:
             pass
         print("\033[1A", end="")
         print("\033[K", end="")
 
     return score
+
 
 NUMBER_OF_ROUNDS = 10
 
@@ -102,43 +127,52 @@ if players_count != 0:
         p = 1
         for player in players:
             score_msg = 'Round #' + str(i + 1) + ': ' + player.name
-            first_trow = getThrow(score_msg + ", what is your 1st score? ")
-
+            first_trow = getThrow(score_msg + ", what is your 1st score? ", 0, False)
+            showUpperScore(first_trow, 1, i, p)
             if i > 0:
-                if player.points[-1][2] == 'X':
+                if player.points[-1][3] == 'X':
                     if i > 1:
-                        if player.points[-2][2] == 'X' and len(player.points) > 1:
-                            player.points[-2][2] = 20 + first_trow
+                        if player.points[-2][3] == 'X' and len(player.points) > 1:
+                            player.points[-2][3] = 20 + first_trow
 
             if i > 0:
-                if player.points[-1][2] == '/' and player.points:
-                    player.points[-1][2] = 10 + first_trow
+                if player.points[-1][3] == '/' and player.points:
+                    player.points[-1][3] = 10 + first_trow
 
+            showLowerScore(player, p)
 
             if first_trow == 10 and i < 9:
-                player.points.append([first_trow, 0, "X"])
-                showScore(player, p, False)
+                player.points.append([first_trow, 0, 0, "X"])
+                showLowerScore(player, p)
             else:
-                second_throw =  getThrow(score_msg + ", what is your 2nd score? ")
+                if i == 9:
+                    is_last = True
+                else:
+                    is_last = False
+                second_throw = getThrow(score_msg + ", what is your 2nd score? ", first_trow, is_last)
+                showUpperScore(second_throw, 2, i, p)
 
                 if i > 0:
-                    if player.points[-1][2] == 'X' and player.points:
-                        player.points[-1][2] = 10 + first_trow + second_throw
-
+                    if player.points[-1][3] == 'X' and player.points:
+                        player.points[-1][3] = 10 + first_trow + second_throw
+                
+                showLowerScore(player, p)
+                
                 if i < 9:
                     if first_trow + second_throw == 10:
-                        player.points.append([first_trow, second_throw, "/"])
-                        showScore(player, p, False)
+                        player.points.append([first_trow, second_throw, 0, "/"])
+                        showLowerScore(player, p)
                     else:
-                        player.points.append([first_trow, second_throw, first_trow + second_throw])
-                        showScore(player, p, False)
+                        player.points.append([first_trow, second_throw, 0, first_trow + second_throw])
+                        showLowerScore(player, p)
                 else:
                     if first_trow == 10 or (first_trow + second_throw == 10):
-                        tird_throw =  getThrow(score_msg + ", what is your 3rd score? ")
+                        tird_throw = getThrow(score_msg + ", what is your 3rd score? ", second_throw, True)
+                        showUpperScore(tird_throw, 3, i, p)
                         player.points.append([first_trow, second_throw, tird_throw, first_trow + second_throw + tird_throw])
                     else:
                         player.points.append([first_trow, second_throw, '', first_trow + second_throw])
-                    showScore(player, p, True)
+                    showLowerScore(player, p)
                     
             p += 1
 
