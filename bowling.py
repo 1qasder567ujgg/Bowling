@@ -300,3 +300,5 @@ for p, player in enumerate(players):
 
 #Move 3 lines down before exit
 moveByLine('B', 3)
+#For Linux compatibility
+print("\033[E", end="")        
